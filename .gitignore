@@ -1,0 +1,18 @@
+# Backend build output
+backend/target/
+
+# Frontend dependencies and build output
+frontend/node_modules/
+frontend/dist/
+
+# Local configuration and uploaded files
+.env
+backend/.env
+frontend/.env
+backend/uploads/
+
+# IDE and operating-system files
+.idea/
+*.iml
+.vscode/
+.DS_Store
