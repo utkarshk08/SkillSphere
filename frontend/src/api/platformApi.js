@@ -70,9 +70,18 @@ export const bookmarksApi = resourceApi('/bookmarks');
 
 export const collaborationRequestsApi = {
   ...resourceApi('/collaboration-requests'),
-  updateStatus: (id, status) => apiClient.put(`/collaboration-requests/${id}`, { status }),
-  accept: (id) => apiClient.put(`/collaboration-requests/${id}`, { status: 'ACCEPTED' }),
-  reject: (id) => apiClient.put(`/collaboration-requests/${id}`, { status: 'REJECTED' }),
+  updateStatus: (id, status, responseMessage = '') => apiClient.put(`/collaboration-requests/${id}`, {
+    status,
+    responseMessage: responseMessage.trim() || null,
+  }),
+  accept: (id, responseMessage = '') => apiClient.put(`/collaboration-requests/${id}`, {
+    status: 'ACCEPTED',
+    responseMessage: responseMessage.trim() || null,
+  }),
+  reject: (id, responseMessage = '') => apiClient.put(`/collaboration-requests/${id}`, {
+    status: 'REJECTED',
+    responseMessage: responseMessage.trim() || null,
+  }),
 };
 
 export const notificationsApi = {

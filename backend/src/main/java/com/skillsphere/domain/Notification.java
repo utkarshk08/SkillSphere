@@ -38,7 +38,8 @@ public class Notification {
     @Column(nullable = false, length = 500)
     private String message;
 
-    @Column(nullable = false)
+    // "read" is a reserved word in MySQL, so use an explicit database-safe column name.
+    @Column(name = "is_read", nullable = false)
     private boolean read = false;
 
     @Column(nullable = false, updatable = false)

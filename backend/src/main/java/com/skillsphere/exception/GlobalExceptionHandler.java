@@ -3,6 +3,7 @@ package com.skillsphere.exception;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.mapping.PropertyReferenceException;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
@@ -10,6 +11,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import jakarta.validation.ConstraintViolationException;
@@ -54,6 +56,22 @@ public class GlobalExceptionHandler {
                 ? "Request body is missing or contains invalid JSON."
                 : exception.getMessage();
         return build(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /** Covers malformed path variables and request parameters, such as a non-numeric resource ID. */
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ApiError> handleTypeMismatch(MethodArgumentTypeMismatchException exception) {
+        Class<?> requiredType = exception.getRequiredType();
+        String message = requiredType != null && Number.class.isAssignableFrom(requiredType)
+                ? "Parameter '" + exception.getName() + "' must be a valid number."
+                : "Parameter '" + exception.getName() + "' has an invalid value.";
+        return build(HttpStatus.BAD_REQUEST, message);
+    }
+
+    /** Spring Data raises this when a client asks to sort by a field that does not exist. */
+    @ExceptionHandler(PropertyReferenceException.class)
+    public ResponseEntity<ApiError> handleInvalidSort(PropertyReferenceException exception) {
+        return build(HttpStatus.BAD_REQUEST, "Unknown sort field '" + exception.getPropertyName() + "'.");
     }
 
     @ExceptionHandler(AuthenticationException.class)

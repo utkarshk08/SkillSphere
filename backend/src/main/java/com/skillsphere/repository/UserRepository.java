@@ -46,6 +46,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             left join Skill skill on skill.user = user
             left join user.interests interest
             where user.publicProfileVisibility = true
+              and user.role = :role
               and (:name is null or lower(user.username) like lower(concat('%', :name, '%'))
                    or lower(concat(coalesce(user.firstName, ''), ' ', coalesce(user.lastName, ''))) like lower(concat('%', :name, '%')))
               and (:college is null or lower(user.collegeName) like lower(concat('%', :college, '%')))
@@ -59,6 +60,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("country") String country,
             @Param("skillName") String skillName,
             @Param("interestName") String interestName,
+            @Param("role") Role role,
             Pageable pageable
     );
 }

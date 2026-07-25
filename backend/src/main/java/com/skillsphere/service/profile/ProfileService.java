@@ -106,13 +106,14 @@ public class ProfileService {
             Pageable pageable
     ) {
         return userRepository.searchPublicProfiles(
-                normalize(name), normalize(college), normalize(country), normalize(skill), normalize(interest), pageable
-        ).map(this::toResponse);
+                normalize(name), normalize(college), normalize(country), normalize(skill), normalize(interest),
+                Role.ROLE_USER, pageable
+        ).map(user -> toResponse(user, false));
     }
 
     @Transactional(readOnly = true)
     public ProfileResponse getCurrent(User currentUser) {
-        return toResponse(findUser(currentUser.getId()));
+        return toResponse(findUser(currentUser.getId()), true);
     }
 
     @Transactional(readOnly = true)
@@ -124,7 +125,9 @@ public class ProfileService {
         if (!canView) {
             throw new UnauthorizedException("This profile is private.");
         }
-        return toResponse(profile);
+        boolean canViewPrivateFields = viewer != null
+                && (viewer.getId().equals(profile.getId()) || viewer.getRole() == Role.ROLE_ADMIN);
+        return toResponse(profile, canViewPrivateFields);
     }
 
     @Transactional
@@ -148,7 +151,7 @@ public class ProfileService {
         user.setPortfolioUrl(trimToNull(request.portfolioUrl()));
         user.setInterests(request.interests());
         user.setPublicProfileVisibility(request.publicProfileVisibility());
-        return toResponse(userRepository.save(user));
+        return toResponse(userRepository.save(user), true);
     }
 
     @Transactional
@@ -172,7 +175,7 @@ public class ProfileService {
         }
 
         user.setProfilePicturePath("profiles/" + storedName);
-        return toResponse(userRepository.save(user));
+        return toResponse(userRepository.save(user), true);
     }
 
     @Transactional
@@ -186,7 +189,7 @@ public class ProfileService {
         user.setVerified(true);
         User saved = userRepository.save(user);
         notificationService.createForUser(user, NotificationType.PROFILE_VERIFIED, "Your public profile has been verified.");
-        return toResponse(saved);
+        return toResponse(saved, true);
     }
 
     @Transactional
@@ -227,6 +230,8 @@ public class ProfileService {
         }
         List<Project> ownedProjects = projectRepository.findAllByOwnerId(userId);
         ownedProjects.forEach(project -> reportService.resolveDeletedContent(ReportedContentType.PROJECT, project.getId()));
+        ownedProjects.forEach(project -> collaborationRequestRepository.deleteByProjectId(project.getId()));
+        collaborationRequestRepository.flush();
         ownedProjects.forEach(projectRepository::delete);
 
         roadmapRepository.findAllByOwnerId(userId).forEach(roadmapRepository::delete);
@@ -244,7 +249,12 @@ public class ProfileService {
         userRepository.delete(user);
     }
 
-    private ProfileResponse toResponse(User user) {
+    /**
+     * Keeps one stable response shape for both private and public profile endpoints. Public
+     * profile discovery returns null for account-only fields, while the owner and administrators
+     * still receive the values they need for profile management.
+     */
+    private ProfileResponse toResponse(User user, boolean includePrivateFields) {
         List<Skill> skills = skillRepository.findByUserId(user.getId(), Pageable.unpaged()).getContent();
         List<String> learningSkills = skills.stream()
                 .filter(skill -> skill.getIntent() == SkillIntent.LEARN)
@@ -256,10 +266,13 @@ public class ProfileService {
                 .toList();
         return new ProfileResponse(
                 user.getId(), user.getUsername(), user.getFullName(), user.getFirstName(), user.getLastName(),
-                user.getEmail(), user.getCollegeName(), user.getCourse(), user.getYearOfStudy(), user.getCountry(),
+                includePrivateFields ? user.getEmail() : null,
+                user.getCollegeName(), user.getCourse(), user.getYearOfStudy(), user.getCountry(),
                 user.getBio(), user.getProfilePicturePath(), user.getGithubUrl(), user.getLinkedinUrl(), user.getPortfolioUrl(),
                 user.getInterests(), learningSkills, teachingSkills, projectRepository.countByOwnerId(user.getId()),
-                user.isPublicProfileVisibility(), user.isVerified(), user.getRole(), user.getAuthProvider()
+                user.isPublicProfileVisibility(), user.isVerified(),
+                includePrivateFields ? user.getRole() : null,
+                includePrivateFields ? user.getAuthProvider() : null
         );
     }
 

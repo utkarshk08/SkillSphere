@@ -5,6 +5,7 @@ import com.skillsphere.domain.User;
 import com.skillsphere.dto.admin.AdminUserResponse;
 import com.skillsphere.dto.profile.ProfileResponse;
 import com.skillsphere.exception.ResourceNotFoundException;
+import com.skillsphere.repository.CollaborationRequestRepository;
 import com.skillsphere.repository.ProjectRepository;
 import com.skillsphere.repository.SkillRepository;
 import com.skillsphere.repository.UserRepository;
@@ -26,6 +27,7 @@ public class AdminService {
     private final UserRepository userRepository;
     private final ProfileService profileService;
     private final ProjectRepository projectRepository;
+    private final CollaborationRequestRepository collaborationRequestRepository;
     private final CommunityService communityService;
     private final SkillRepository skillRepository;
     private final ReportService reportService;
@@ -34,6 +36,7 @@ public class AdminService {
             UserRepository userRepository,
             ProfileService profileService,
             ProjectRepository projectRepository,
+            CollaborationRequestRepository collaborationRequestRepository,
             CommunityService communityService,
             SkillRepository skillRepository,
             ReportService reportService
@@ -41,6 +44,7 @@ public class AdminService {
         this.userRepository = userRepository;
         this.profileService = profileService;
         this.projectRepository = projectRepository;
+        this.collaborationRequestRepository = collaborationRequestRepository;
         this.communityService = communityService;
         this.skillRepository = skillRepository;
         this.reportService = reportService;
@@ -70,8 +74,13 @@ public class AdminService {
     public void deleteContent(ReportedContentType contentType, Long contentId, User currentAdmin) {
         switch (contentType) {
             case PROFILE -> deleteUser(contentId, currentAdmin);
-            case PROJECT -> projectRepository.delete(projectRepository.findById(contentId)
-                    .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + contentId)));
+            case PROJECT -> {
+                var project = projectRepository.findById(contentId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Project not found: " + contentId));
+                collaborationRequestRepository.deleteByProjectId(contentId);
+                collaborationRequestRepository.flush();
+                projectRepository.delete(project);
+            }
             case COMMUNITY -> communityService.delete(contentId);
             case SKILL -> skillRepository.delete(skillRepository.findById(contentId)
                     .orElseThrow(() -> new ResourceNotFoundException("Skill not found: " + contentId)));

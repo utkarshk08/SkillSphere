@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
-import { communitiesApi, projectsApi } from '../api/platformApi';
+import { Link } from 'react-router-dom';
+import { collaborationRequestsApi, communitiesApi, projectsApi } from '../api/platformApi';
 import AppShell from '../components/layout/AppShell';
 import PageHeader from '../components/shared/PageHeader';
 import Pagination from '../components/shared/Pagination';
@@ -165,7 +166,7 @@ export default function ProjectsPage() {
       ) : (
         <>
           <section className="card-grid project-card-grid">
-            {page.content.map((project) => <ProjectCard key={project.id} onDelete={deleteProject} onEdit={openEditForm} project={project} userId={user?.id} />)}
+            {page.content.map((project) => <ProjectCard key={project.id} onDelete={deleteProject} onEdit={openEditForm} project={project} user={user} />)}
           </section>
           <Pagination page={page} pageNumber={pageNumber} onPageChange={setPageNumber} />
         </>
@@ -174,15 +175,57 @@ export default function ProjectsPage() {
   );
 }
 
-function ProjectCard({ project, onEdit, onDelete, userId }) {
-  const isOwner = Number(project.ownerId) === Number(userId);
+function ProjectCard({ project, onEdit, onDelete, user }) {
+  const [showApplicationForm, setShowApplicationForm] = useState(false);
+  const [applicationMessage, setApplicationMessage] = useState('');
+  const [applicationError, setApplicationError] = useState('');
+  const [applicationSent, setApplicationSent] = useState(false);
+  const [isApplying, setIsApplying] = useState(false);
   const images = Array.isArray(project.projectImages) ? project.projectImages : [];
+  const members = Array.isArray(project.members) ? project.members : [];
+  const isOwner = Number(project.ownerId) === Number(user?.id)
+    || (project.ownerUsername && project.ownerUsername === user?.username);
+  const isMember = members.some((member) => (
+    Number(member.id) === Number(user?.id)
+    || (member.username && member.username === user?.username)
+  ));
+  const isOpen = project.status === 'OPEN';
+  const hasOpenPosition = Number(project.openPositions) > 0;
+  const canApply = Boolean(user) && !isOwner && !isMember && isOpen && hasOpenPosition && !applicationSent;
+
+  async function applyToJoin(event) {
+    event.preventDefault();
+    setApplicationError('');
+    setIsApplying(true);
+
+    try {
+      await collaborationRequestsApi.create({
+        projectId: project.id,
+        message: applicationMessage.trim(),
+      });
+      setApplicationMessage('');
+      setShowApplicationForm(false);
+      setApplicationSent(true);
+    } catch (requestError) {
+      setApplicationError(getErrorMessage(requestError, 'Unable to send this project application.'));
+    } finally {
+      setIsApplying(false);
+    }
+  }
 
   return (
     <article className="content-card project-card">
       {images[0] && <img alt="Project" className="project-cover" src={mediaUrl(images[0])} />}
       <div className="card-heading-row">
-        <div><h2>{project.title}</h2><p className="muted-copy">By {project.ownerUsername || 'Student'}</p></div>
+        <div>
+          <h2>{project.title}</h2>
+          <p className="muted-copy">
+            By{' '}
+            {project.ownerUsername
+              ? <Link className="inline-profile-link" to={`/profiles/${project.ownerUsername}`}>@{project.ownerUsername}</Link>
+              : 'Student'}
+          </p>
+        </div>
         <span className={`status-pill status-${String(project.status || '').toLowerCase()}`}>{humanize(project.status)}</span>
       </div>
       <p>{project.description}</p>
@@ -194,7 +237,60 @@ function ProjectCard({ project, onEdit, onDelete, userId }) {
       </dl>
       <p className="card-label">Tech stack</p><div className="tag-list">{(project.techStack || []).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
       <p className="card-label">Required skills</p><div className="tag-list">{(project.requiredSkills || []).map((item) => <span className="tag" key={item}>{item}</span>)}</div>
+      <div className="project-members">
+        <p className="card-label">Team members</p>
+        {members.length > 0 ? (
+          <div className="member-link-list">
+            {members.map((member) => (
+              member.username ? (
+                <Link className="member-link" key={member.id || member.username} to={`/profiles/${member.username}`}>
+                  {member.fullName || `@${member.username}`}
+                </Link>
+              ) : (
+                <span className="member-link" key={member.id}>{member.fullName || 'Student'}</span>
+              )
+            ))}
+          </div>
+        ) : <p className="muted-copy">No team members are listed yet.</p>}
+      </div>
       {project.githubLink && <a className="text-link" href={project.githubLink} rel="noreferrer" target="_blank">View GitHub repository</a>}
+
+      {!isOwner && (
+        <div className="project-application">
+          {isMember ? (
+            <p className="form-message form-message-success">You are a member of this project.</p>
+          ) : applicationSent ? (
+            <p className="form-message form-message-success" role="status">Application sent to the project owner.</p>
+          ) : !isOpen ? (
+            <p className="muted-copy">Applications are unavailable while this project is {humanize(project.status).toLowerCase()}.</p>
+          ) : !hasOpenPosition ? (
+            <p className="muted-copy">This project team is full.</p>
+          ) : showApplicationForm ? (
+            <form className="project-application-form" onSubmit={applyToJoin}>
+              <label className="field">
+                <span>Message to the project owner</span>
+                <textarea
+                  maxLength="1000"
+                  onChange={(event) => setApplicationMessage(event.target.value)}
+                  placeholder="Introduce yourself and explain how you can contribute."
+                  required
+                  rows="3"
+                  value={applicationMessage}
+                />
+                <small>{applicationMessage.length}/1000 characters</small>
+              </label>
+              {applicationError && <p className="form-message form-message-error" role="alert">{applicationError}</p>}
+              <div className="form-actions">
+                <button className="button button-primary button-small" disabled={isApplying} type="submit">{isApplying ? 'Sending…' : 'Send application'}</button>
+                <button className="button button-secondary button-small" disabled={isApplying} onClick={() => { setShowApplicationForm(false); setApplicationError(''); }} type="button">Cancel</button>
+              </div>
+            </form>
+          ) : canApply ? (
+            <button className="button button-primary button-small" onClick={() => setShowApplicationForm(true)} type="button">Apply to join</button>
+          ) : null}
+        </div>
+      )}
+
       {isOwner && <div className="card-actions"><button className="button button-secondary button-small" onClick={() => onEdit(project)} type="button">Edit</button><button className="button button-danger button-small" onClick={() => onDelete(project)} type="button">Delete</button></div>}
     </article>
   );

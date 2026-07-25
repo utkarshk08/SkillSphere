@@ -12,7 +12,10 @@ public record CollaborationRequestResponse(
         Long receiverId,
         String receiverUsername,
         String receiverFullName,
+        Long projectId,
+        String projectTitle,
         String message,
+        String responseMessage,
         CollaborationRequestStatus status,
         LocalDateTime createdAt
 ) { }

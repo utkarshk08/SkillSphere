@@ -64,7 +64,7 @@ public class CommunityService {
     }
 
     @Transactional(readOnly = true)
-    public Page<CommunityResponse> getCommunities(String search, Pageable pageable) {
+    public Page<CommunityResponse> getCommunities(String search, Pageable pageable, User currentUser) {
         String normalizedSearch = normalizeSearch(search);
         Page<Community> communities = normalizedSearch == null
                 ? communityRepository.findAll(pageable)
@@ -73,12 +73,12 @@ public class CommunityService {
                         normalizedSearch,
                         pageable
                 );
-        return communities.map(this::toResponse);
+        return communities.map(community -> toResponse(community, currentUser));
     }
 
     @Transactional(readOnly = true)
-    public CommunityResponse getCommunity(Long communityId) {
-        return toResponse(findCommunity(communityId));
+    public CommunityResponse getCommunity(Long communityId, User currentUser) {
+        return toResponse(findCommunity(communityId), currentUser);
     }
 
     @Transactional(readOnly = true)
@@ -104,7 +104,7 @@ public class CommunityService {
     }
 
     @Transactional
-    public CommunityResponse create(CommunityRequest request) {
+    public CommunityResponse create(CommunityRequest request, User currentUser) {
         String communityName = request.name().trim();
         if (communityRepository.existsByNameIgnoreCase(communityName)) {
             throw new BadRequestException("A community with this name already exists.");
@@ -112,11 +112,11 @@ public class CommunityService {
 
         Community community = new Community();
         applyRequest(community, request);
-        return toResponse(communityRepository.save(community));
+        return toResponse(communityRepository.save(community), currentUser);
     }
 
     @Transactional
-    public CommunityResponse update(Long communityId, CommunityRequest request) {
+    public CommunityResponse update(Long communityId, CommunityRequest request, User currentUser) {
         Community community = findCommunity(communityId);
         String requestedName = request.name().trim();
         if (!community.getName().equalsIgnoreCase(requestedName)
@@ -125,7 +125,7 @@ public class CommunityService {
         }
 
         applyRequest(community, request);
-        return toResponse(communityRepository.save(community));
+        return toResponse(communityRepository.save(community), currentUser);
     }
 
     @Transactional
@@ -159,7 +159,7 @@ public class CommunityService {
                 NotificationType.COMMUNITY_JOINED,
                 "You joined " + saved.getName() + " successfully."
         );
-        return toResponse(saved);
+        return toResponse(saved, user);
     }
 
     @Transactional
@@ -171,7 +171,7 @@ public class CommunityService {
         }
 
         community.getMembers().removeIf(member -> Objects.equals(member.getId(), user.getId()));
-        return toResponse(communityRepository.save(community));
+        return toResponse(communityRepository.save(community), user);
     }
 
     private Community findCommunity(Long communityId) {
@@ -205,7 +205,10 @@ public class CommunityService {
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
-    private CommunityResponse toResponse(Community community) {
+    private CommunityResponse toResponse(Community community, User currentUser) {
+        boolean member = currentUser != null
+                && currentUser.getId() != null
+                && containsMember(community, currentUser.getId());
         return new CommunityResponse(
                 community.getId(),
                 community.getName(),
@@ -213,7 +216,8 @@ public class CommunityService {
                 new LinkedHashSet<>(community.getResources()),
                 community.getMembers().size(),
                 community.getProjects().size(),
-                community.getResources().size()
+                community.getResources().size(),
+                member
         );
     }
 

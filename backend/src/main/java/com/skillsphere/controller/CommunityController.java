@@ -42,14 +42,18 @@ public class CommunityController {
     @GetMapping
     public Page<CommunityResponse> getCommunities(
             @RequestParam(required = false) String search,
-            @PageableDefault(size = 10, sort = "id") Pageable pageable
+            @PageableDefault(size = 10, sort = "id") Pageable pageable,
+            @AuthenticationPrincipal User currentUser
     ) {
-        return communityService.getCommunities(search, pageable);
+        return communityService.getCommunities(search, pageable, currentUser);
     }
 
     @GetMapping("/{communityId}")
-    public CommunityResponse getCommunity(@PathVariable Long communityId) {
-        return communityService.getCommunity(communityId);
+    public CommunityResponse getCommunity(
+            @PathVariable Long communityId,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        return communityService.getCommunity(communityId, currentUser);
     }
 
     @GetMapping("/{communityId}/members")
@@ -71,17 +75,21 @@ public class CommunityController {
     @PostMapping
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
-    public CommunityResponse createCommunity(@Valid @RequestBody CommunityRequest request) {
-        return communityService.create(request);
+    public CommunityResponse createCommunity(
+            @Valid @RequestBody CommunityRequest request,
+            @AuthenticationPrincipal User currentUser
+    ) {
+        return communityService.create(request, currentUser);
     }
 
     @PutMapping("/{communityId}")
     @PreAuthorize("hasRole('ADMIN')")
     public CommunityResponse updateCommunity(
             @PathVariable Long communityId,
-            @Valid @RequestBody CommunityRequest request
+            @Valid @RequestBody CommunityRequest request,
+            @AuthenticationPrincipal User currentUser
     ) {
-        return communityService.update(communityId, request);
+        return communityService.update(communityId, request, currentUser);
     }
 
     @DeleteMapping("/{communityId}")

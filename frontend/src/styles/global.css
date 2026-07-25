@@ -323,6 +323,15 @@ h1, h2, p { margin-top: 0; }
 .skill-card > p, .project-card > p, .community-card > p { flex: 1; }
 .project-cover { border: 1px solid #e2e8f0; border-radius: .55rem; height: 10rem; margin: -.15rem 0 1rem; object-fit: cover; width: 100%; }
 .compact-details { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: .85rem; }
+.inline-profile-link { color: #2563eb; font-weight: 700; text-decoration: none; }
+.inline-profile-link:hover { text-decoration: underline; }
+.project-members { margin-top: .15rem; }
+.member-link-list { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .7rem; }
+.member-link { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 999px; color: #2563eb; font-size: .76rem; font-weight: 650; padding: .28rem .6rem; text-decoration: none; }
+a.member-link:hover { background: #eff6ff; border-color: #bfdbfe; }
+.project-application { border-top: 1px solid #f1f5f9; margin-top: 1rem; padding-top: 1rem; }
+.project-application > .form-message { margin-bottom: 0; }
+.project-application-form { display: grid; gap: .7rem; }
 .community-counts { display: grid; gap: .6rem; grid-template-columns: repeat(3, 1fr); margin: .9rem 0; }
 .community-counts div { background: #f8fafc; border-radius: .5rem; padding: .55rem; text-align: center; }
 .community-counts dt { color: #64748b; font-size: .7rem; font-weight: 700; text-transform: uppercase; }
@@ -363,6 +372,12 @@ h1, h2, p { margin-top: 0; }
 /* Requests, notifications, reports */
 .request-card, .notification-card, .report-card { max-width: 52rem; }
 .request-message, .notification-message { color: #334155 !important; font-size: .95rem; margin: .9rem 0 .35rem; white-space: pre-wrap; }
+.request-project-context { align-items: center; background: #eff6ff; border-radius: .55rem; display: flex; flex-wrap: wrap; gap: .45rem .7rem; margin-top: .9rem; padding: .65rem .75rem; }
+.request-project-context span { color: #475569; font-size: .74rem; font-weight: 750; text-transform: uppercase; }
+.request-project-context a { color: #1d4ed8; font-size: .88rem; font-weight: 700; text-decoration: none; }
+.request-project-context a:hover { text-decoration: underline; }
+.request-response { background: #f8fafc; border-left: 3px solid #93c5fd; margin-top: .9rem; padding: .15rem .8rem .55rem; }
+.request-response-form { border-top: 1px solid #f1f5f9; display: grid; gap: .7rem; margin-top: 1rem; padding-top: 1rem; }
 .notification-card.unread { border-color: #bfdbfe; }
 .unread-dot { background: #2563eb; border-radius: 50%; height: .55rem; margin-top: .2rem; width: .55rem; }
 

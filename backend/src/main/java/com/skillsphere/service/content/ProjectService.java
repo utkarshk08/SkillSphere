@@ -12,6 +12,7 @@ import com.skillsphere.exception.BadRequestException;
 import com.skillsphere.exception.FileUploadException;
 import com.skillsphere.exception.ResourceNotFoundException;
 import com.skillsphere.exception.UnauthorizedException;
+import com.skillsphere.repository.CollaborationRequestRepository;
 import com.skillsphere.repository.CommunityRepository;
 import com.skillsphere.repository.ProjectRepository;
 import com.skillsphere.repository.UserRepository;
@@ -50,6 +51,7 @@ public class ProjectService {
     private final ProjectRepository projectRepository;
     private final CommunityRepository communityRepository;
     private final UserRepository userRepository;
+    private final CollaborationRequestRepository collaborationRequestRepository;
     private final ReportService reportService;
     private final Path uploadDirectory;
 
@@ -57,12 +59,14 @@ public class ProjectService {
             ProjectRepository projectRepository,
             CommunityRepository communityRepository,
             UserRepository userRepository,
+            CollaborationRequestRepository collaborationRequestRepository,
             ReportService reportService,
             @Value("${app.file.upload-dir}") String uploadDirectory
     ) {
         this.projectRepository = projectRepository;
         this.communityRepository = communityRepository;
         this.userRepository = userRepository;
+        this.collaborationRequestRepository = collaborationRequestRepository;
         this.reportService = reportService;
         this.uploadDirectory = Paths.get(uploadDirectory).toAbsolutePath().normalize();
     }
@@ -121,6 +125,8 @@ public class ProjectService {
     public void delete(Long projectId, User currentUser) {
         Project project = findProject(projectId);
         ensureOwner(project, currentUser);
+        collaborationRequestRepository.deleteByProjectId(projectId);
+        collaborationRequestRepository.flush();
         projectRepository.delete(project);
         reportService.resolveDeletedContent(ReportedContentType.PROJECT, projectId);
     }

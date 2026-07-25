@@ -16,8 +16,9 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 
 /**
- * A direct student-to-student request for collaboration. Keeping it user-to-user makes
- * the feature easy to explain and matches the named sender/receiver example.
+ * A student-to-student collaboration request. A request can either be general or be
+ * linked to a project application; in both cases there is still one sender and one
+ * receiver, so the workflow remains easy to explain.
  */
 @Entity
 @Table(name = "collaboration_requests")
@@ -35,8 +36,15 @@ public class CollaborationRequest {
     @JoinColumn(name = "receiver_id", nullable = false)
     private User receiver;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "project_id")
+    private Project project;
+
     @Column(nullable = false, length = 1000)
     private String message;
+
+    @Column(length = 1000)
+    private String responseMessage;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
@@ -54,8 +62,12 @@ public class CollaborationRequest {
     public void setSender(User sender) { this.sender = sender; }
     public User getReceiver() { return receiver; }
     public void setReceiver(User receiver) { this.receiver = receiver; }
+    public Project getProject() { return project; }
+    public void setProject(Project project) { this.project = project; }
     public String getMessage() { return message; }
     public void setMessage(String message) { this.message = message; }
+    public String getResponseMessage() { return responseMessage; }
+    public void setResponseMessage(String responseMessage) { this.responseMessage = responseMessage; }
     public CollaborationRequestStatus getStatus() { return status; }
     public void setStatus(CollaborationRequestStatus status) { this.status = status; }
     public LocalDateTime getCreatedAt() { return createdAt; }

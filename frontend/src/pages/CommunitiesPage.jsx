@@ -149,8 +149,11 @@ function CommunityCard({ community, isAdmin, onAction, onEdit, onDelete }) {
         <div><dt>Resources</dt><dd>{community.resourceCount ?? 0}</dd></div>
       </dl>
       <div className="card-actions card-actions-wrap">
-        <button className="button button-primary button-small" onClick={() => onAction(() => communitiesApi.join(community.id), 'Community joined successfully.')} type="button">Join</button>
-        <button className="button button-secondary button-small" onClick={() => onAction(() => communitiesApi.leave(community.id), 'You left the community.')} type="button">Leave</button>
+        {community.member ? (
+          <button className="button button-secondary button-small" onClick={() => onAction(() => communitiesApi.leave(community.id), 'You left the community.')} type="button">Leave</button>
+        ) : (
+          <button className="button button-primary button-small" onClick={() => onAction(() => communitiesApi.join(community.id), 'Community joined successfully.')} type="button">Join</button>
+        )}
         <button className="button button-secondary button-small" onClick={() => onAction(() => bookmarksApi.create({ targetType: 'COMMUNITY', targetId: community.id }), 'Community bookmarked.')} type="button">Bookmark</button>
       </div>
       <div className="community-view-tabs">
@@ -192,4 +195,3 @@ function CommunityForm({ form, onChange, onSubmit, onCancel, isSaving, editing }
     </form>
   );
 }
-

@@ -13,6 +13,7 @@ public record CommunityResponse(
         Set<String> resources,
         int memberCount,
         int projectCount,
-        int resourceCount
+        int resourceCount,
+        boolean member
 ) {
 }

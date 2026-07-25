@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { skillsApi } from '../api/platformApi';
 import AppShell from '../components/layout/AppShell';
 import PageHeader from '../components/shared/PageHeader';
@@ -121,7 +122,12 @@ export default function SkillsPage() {
               return (
                 <article className="content-card skill-card" key={skill.id}>
                   <div className="card-heading-row">
-                    <div><h2>{skill.name}</h2><p className="muted-copy">{skill.ownerUsername ? `Added by ${skill.ownerUsername}` : 'Your skill'}</p></div>
+                    <div>
+                      <h2>{skill.name}</h2>
+                      <p className="muted-copy">
+                        {skill.ownerUsername ? <>Added by <Link className="text-link" to={`/profiles/${skill.ownerUsername}`}>@{skill.ownerUsername}</Link></> : 'Your skill'}
+                      </p>
+                    </div>
                     <span className={`status-pill ${skill.intent === 'TEACH' ? 'status-open' : 'status-muted'}`}>{skill.intent === 'TEACH' ? 'Can teach' : 'Want to learn'}</span>
                   </div>
                   <p>{skill.description}</p>
