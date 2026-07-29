@@ -1,0 +1,78 @@
+services:
+  - type: web
+    name: skillsphere-api-tidb-utkarshk08
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: tidb
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_POOL_MAX_SIZE
+        value: "5"
+      - key: DB_POOL_MIN_IDLE
+        value: "0"
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://skillsphere-tidb-utkarshk08.vercel.app
+      - key: FRONTEND_OAUTH_REDIRECT_URL
+        value: https://skillsphere-tidb-utkarshk08.vercel.app/oauth2/callback
+      - key: FILE_STORAGE
+        value: cloudinary
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: skillsphere/tidb
+
+  - type: web
+    name: skillsphere-api-neon-utkarshk08
+    runtime: docker
+    plan: free
+    region: singapore
+    branch: main
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /actuator/health
+    autoDeploy: true
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: neon
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_POOL_MAX_SIZE
+        value: "5"
+      - key: DB_POOL_MIN_IDLE
+        value: "0"
+      - key: JPA_DDL_AUTO
+        value: update
+      - key: JWT_SECRET
+        generateValue: true
+      - key: FRONTEND_URL
+        value: https://skillsphere-neon-utkarshk08.vercel.app
+      - key: FRONTEND_OAUTH_REDIRECT_URL
+        value: https://skillsphere-neon-utkarshk08.vercel.app/oauth2/callback
+      - key: FILE_STORAGE
+        value: cloudinary
+      - key: CLOUDINARY_URL
+        sync: false
+      - key: CLOUDINARY_FOLDER
+        value: skillsphere/neon

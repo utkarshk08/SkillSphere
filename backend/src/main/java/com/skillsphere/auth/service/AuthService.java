@@ -51,7 +51,7 @@ public class AuthService {
     @Transactional
     public AuthResponse register(RegistrationRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
-        String username = trim(request.username());
+        String username = normalizeUsername(request.username());
 
         if (!request.password().equals(request.confirmPassword())) {
             throw new BadRequestException("Password and confirm password must match.");
@@ -59,7 +59,7 @@ public class AuthService {
         if (userRepository.existsByEmail(normalizedEmail)) {
             throw new BadRequestException("An account with this email already exists.");
         }
-        if (userRepository.existsByUsername(username)) {
+        if (userRepository.existsByUsernameIgnoreCase(username)) {
             throw new BadRequestException("This username is already taken.");
         }
 
@@ -136,7 +136,7 @@ public class AuthService {
     }
 
     private User findUserByUsername(String username) {
-        return userRepository.findByUsername(trim(username))
+        return userRepository.findByUsernameIgnoreCase(normalizeUsername(username))
                 .orElseThrow(() -> new ResourceNotFoundException("User account was not found."));
     }
 
@@ -149,7 +149,7 @@ public class AuthService {
 
         String candidate = baseUsername;
         int suffix = 1;
-        while (userRepository.existsByUsername(candidate)) {
+        while (userRepository.existsByUsernameIgnoreCase(candidate)) {
             candidate = baseUsername + "_" + suffix++;
         }
         return candidate;
@@ -157,6 +157,10 @@ public class AuthService {
 
     private String normalizeEmail(String email) {
         return trim(email).toLowerCase(Locale.ROOT);
+    }
+
+    private String normalizeUsername(String username) {
+        return trim(username).toLowerCase(Locale.ROOT);
     }
 
     private String trim(String value) {

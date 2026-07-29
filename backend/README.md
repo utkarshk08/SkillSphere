@@ -1,8 +1,8 @@
 # SkillSphere backend
 
-This Maven/Spring Boot 3.5 application uses Java 21, MySQL, JWT authentication, Google OAuth2,
-Swagger/OpenAPI, and local file serving. It is intentionally a single, layered application:
-controllers delegate to services, services use repositories, and JPA stores data in MySQL.
+This Maven/Spring Boot 3.5 application uses Java 21, JPA/Hibernate, JWT authentication, Google
+OAuth2, Swagger/OpenAPI, and configurable image storage. The same executable supports local MySQL,
+TiDB Cloud through MySQL Connector/J, and Neon PostgreSQL through pgJDBC.
 
 ## Run locally
 
@@ -24,14 +24,51 @@ Swagger UI is available at `http://localhost:8080/swagger-ui.html` and the OpenA
 
 ## Initial admin account
 
-On the first application start, `CommandLineRunner` checks whether a `ROLE_ADMIN` exists. If not,
-it creates the requested initial account:
+Administrator creation is disabled by default. To seed one, set all three variables before the
+first start:
 
-- Email: `admin@skillsphere.com`
-- Password: `Admin@12345`
-- Role: `ROLE_ADMIN`
+```text
+ADMIN_USERNAME=admin
+ADMIN_EMAIL=your-private-admin-email
+ADMIN_INITIAL_PASSWORD=a-strong-unique-password
+```
 
-Change this password after its first use. There is intentionally no public admin-registration API.
+`CommandLineRunner` creates the account only when no `ROLE_ADMIN` exists. Remove the initial
+password environment variable after confirming the account. There is intentionally no public
+admin-registration API.
+
+## TiDB and Neon runtime profiles
+
+Build one executable:
+
+```bash
+mvn clean package
+```
+
+Use one of these configurations at runtime:
+
+| Target | Profile | JDBC URL |
+| --- | --- | --- |
+| TiDB Cloud Starter | `tidb` | Exact `jdbc:mysql://...` TLS URL from the TiDB console |
+| Neon PostgreSQL | `neon` | `jdbc:postgresql://...?...sslmode=require` URL |
+
+Set `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, and `SPRING_PROFILES_ACTIVE`. Both JDBC drivers are
+included in the same JAR; controllers, services, entities, and repositories remain unchanged.
+
+## Image storage
+
+- Local development: `FILE_STORAGE=local` and `FILE_UPLOAD_DIR=uploads`.
+- Render: `FILE_STORAGE=cloudinary` and a secret `CLOUDINARY_URL`.
+
+Render's free filesystem is ephemeral, so local uploads are unsuitable for a hosted demo. With
+Cloudinary enabled, the database stores secure HTTPS image URLs. The frontend already accepts
+both local upload paths and absolute HTTPS URLs.
+
+## Container and health check
+
+The included `Dockerfile` builds the application with Java 21 and runs it as an unprivileged user.
+Render should use `/actuator/health` as its health-check path. The application reads Render's
+`PORT` environment variable automatically.
 
 ## Google OAuth setup
 

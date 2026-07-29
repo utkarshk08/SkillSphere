@@ -41,6 +41,23 @@ To verify a production build:
 npm run build
 ```
 
+## Vercel deployment
+
+Import the GitHub repository into Vercel and set the project root directory to `frontend`.
+The included `vercel.json` sends client-side routes such as `/projects/12` back to `index.html`.
+
+Create two Vercel projects from the same commit because Vite embeds `VITE_*` variables at build
+time:
+
+| Frontend project | `VITE_API_BASE_URL` | `VITE_OAUTH_LOGIN_URL` |
+| --- | --- | --- |
+| TiDB version | `https://<tidb-render-service>/api` | `https://<tidb-render-service>/oauth2/authorization/google` |
+| Neon version | `https://<neon-render-service>/api` | `https://<neon-render-service>/oauth2/authorization/google` |
+
+Set both variables for Production. A change to either value requires a new Vercel deployment.
+Preview deployments use different origins and are intentionally not allowed by the backend's
+single exact production CORS origin.
+
 ## Backend connection
 
 `VITE_API_BASE_URL` defaults to `http://localhost:8080/api`. The Axios client automatically sends the stored JWT on protected requests as:

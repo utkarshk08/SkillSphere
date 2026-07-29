@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/layout/AuthLayout';
 import useAuth from '../hooks/useAuth';
+import { OAUTH_LOGIN_URL } from '../config/environment';
 
 const initialCredentials = { email: '', password: '' };
 const OAUTH_DESTINATION_KEY = 'skillsphere_oauth_destination';
@@ -47,9 +48,7 @@ export default function LoginPage() {
     } else {
       sessionStorage.removeItem(OAUTH_DESTINATION_KEY);
     }
-    window.location.assign(
-      import.meta.env.VITE_OAUTH_LOGIN_URL || 'http://localhost:8080/oauth2/authorization/google',
-    );
+    window.location.assign(OAUTH_LOGIN_URL);
   }
 
   return (

@@ -7,6 +7,7 @@ import com.skillsphere.repository.CommunityRepository;
 import com.skillsphere.repository.ProjectRepository;
 import com.skillsphere.repository.UserRepository;
 import com.skillsphere.service.report.ReportService;
+import com.skillsphere.service.storage.ImageStorageService;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 
@@ -29,7 +30,7 @@ class ProjectServiceTest {
                 mock(UserRepository.class),
                 requestRepository,
                 reportService,
-                "target/test-uploads"
+                mock(ImageStorageService.class)
         );
         User owner = new User();
         owner.setId(1L);

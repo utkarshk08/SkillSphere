@@ -16,12 +16,14 @@ import com.skillsphere.repository.SkillRepository;
 import com.skillsphere.repository.UserRepository;
 import com.skillsphere.service.notification.NotificationService;
 import com.skillsphere.service.report.ReportService;
+import com.skillsphere.service.storage.ImageStorageService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.mock.web.MockMultipartFile;
 
 import java.util.List;
 import java.util.Optional;
@@ -37,6 +39,7 @@ class ProfileServiceTest {
     private UserRepository userRepository;
     private SkillRepository skillRepository;
     private ProjectRepository projectRepository;
+    private ImageStorageService imageStorageService;
     private ProfileService profileService;
 
     @BeforeEach
@@ -44,6 +47,7 @@ class ProfileServiceTest {
         userRepository = mock(UserRepository.class);
         skillRepository = mock(SkillRepository.class);
         projectRepository = mock(ProjectRepository.class);
+        imageStorageService = mock(ImageStorageService.class);
         profileService = new ProfileService(
                 userRepository,
                 skillRepository,
@@ -57,7 +61,7 @@ class ProfileServiceTest {
                 mock(AnnouncementRepository.class),
                 mock(NotificationService.class),
                 mock(ReportService.class),
-                "target/test-uploads"
+                imageStorageService
         );
     }
 
@@ -86,7 +90,7 @@ class ProfileServiceTest {
     @Test
     void anonymousPublicProfileDoesNotExposeAccountFields() {
         User student = student(1L, "public_student");
-        when(userRepository.findByUsername(student.getUsername())).thenReturn(Optional.of(student));
+        when(userRepository.findByUsernameIgnoreCase(student.getUsername())).thenReturn(Optional.of(student));
         stubProfileDetails(student);
 
         ProfileResponse response = profileService.getByUsername(student.getUsername(), null);
@@ -100,7 +104,7 @@ class ProfileServiceTest {
     void anotherStudentDoesNotSeeAccountFieldsOnAPublicProfile() {
         User student = student(1L, "public_student");
         User viewer = student(2L, "other_student");
-        when(userRepository.findByUsername(student.getUsername())).thenReturn(Optional.of(student));
+        when(userRepository.findByUsernameIgnoreCase(student.getUsername())).thenReturn(Optional.of(student));
         stubProfileDetails(student);
 
         ProfileResponse response = profileService.getByUsername(student.getUsername(), viewer);
@@ -128,7 +132,7 @@ class ProfileServiceTest {
         User student = student(1L, "public_student");
         User admin = student(2L, "site_admin");
         admin.setRole(Role.ROLE_ADMIN);
-        when(userRepository.findByUsername(student.getUsername())).thenReturn(Optional.of(student));
+        when(userRepository.findByUsernameIgnoreCase(student.getUsername())).thenReturn(Optional.of(student));
         stubProfileDetails(student);
 
         ProfileResponse response = profileService.getByUsername(student.getUsername(), admin);
@@ -136,6 +140,27 @@ class ProfileServiceTest {
         assertEquals(student.getEmail(), response.email());
         assertEquals(Role.ROLE_USER, response.role());
         assertEquals(AuthProvider.LOCAL, response.authProvider());
+    }
+
+    @Test
+    void uploadedProfilePicturePersistsTheStorageProviderUrl() {
+        User student = student(1L, "profile_owner");
+        MockMultipartFile file = new MockMultipartFile(
+                "file",
+                "avatar.png",
+                "image/png",
+                new byte[]{1, 2, 3}
+        );
+        String cloudUrl = "https://res.cloudinary.com/demo/image/upload/profile.png";
+        when(userRepository.findById(student.getId())).thenReturn(Optional.of(student));
+        when(imageStorageService.store(file, "profiles")).thenReturn(cloudUrl);
+        when(userRepository.save(student)).thenReturn(student);
+        stubProfileDetails(student);
+
+        ProfileResponse response = profileService.uploadProfilePicture(file, student);
+
+        assertEquals(cloudUrl, response.profilePicturePath());
+        verify(imageStorageService).store(file, "profiles");
     }
 
     private User student(Long id, String username) {

@@ -78,7 +78,9 @@ public class SecurityConfig {
                                 "/login/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/api-docs/**"
+                                "/api-docs/**",
+                                "/actuator/health",
+                                "/actuator/health/**"
                         ).permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         // A public profile/roadmap is meaningful only if it can be viewed without a JWT.
@@ -110,7 +112,7 @@ public class SecurityConfig {
         return identifier -> {
             String normalizedIdentifier = identifier == null ? "" : identifier.trim();
             return userRepository.findByEmail(normalizedIdentifier.toLowerCase(Locale.ROOT))
-                    .or(() -> userRepository.findByUsername(normalizedIdentifier))
+                    .or(() -> userRepository.findByUsernameIgnoreCase(normalizedIdentifier))
                     .orElseThrow(() -> new UsernameNotFoundException("User account was not found."));
         };
     }

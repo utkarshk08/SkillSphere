@@ -9,7 +9,6 @@ import com.skillsphere.dto.content.ProjectRequest;
 import com.skillsphere.dto.content.ProjectResponse;
 import com.skillsphere.dto.content.UserSummaryResponse;
 import com.skillsphere.exception.BadRequestException;
-import com.skillsphere.exception.FileUploadException;
 import com.skillsphere.exception.ResourceNotFoundException;
 import com.skillsphere.exception.UnauthorizedException;
 import com.skillsphere.repository.CollaborationRequestRepository;
@@ -17,7 +16,7 @@ import com.skillsphere.repository.CommunityRepository;
 import com.skillsphere.repository.ProjectRepository;
 import com.skillsphere.repository.UserRepository;
 import com.skillsphere.service.report.ReportService;
-import org.springframework.beans.factory.annotation.Value;
+import com.skillsphere.service.storage.ImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -25,16 +24,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Set;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -53,7 +47,7 @@ public class ProjectService {
     private final UserRepository userRepository;
     private final CollaborationRequestRepository collaborationRequestRepository;
     private final ReportService reportService;
-    private final Path uploadDirectory;
+    private final ImageStorageService imageStorageService;
 
     public ProjectService(
             ProjectRepository projectRepository,
@@ -61,14 +55,14 @@ public class ProjectService {
             UserRepository userRepository,
             CollaborationRequestRepository collaborationRequestRepository,
             ReportService reportService,
-            @Value("${app.file.upload-dir}") String uploadDirectory
+            ImageStorageService imageStorageService
     ) {
         this.projectRepository = projectRepository;
         this.communityRepository = communityRepository;
         this.userRepository = userRepository;
         this.collaborationRequestRepository = collaborationRequestRepository;
         this.reportService = reportService;
-        this.uploadDirectory = Paths.get(uploadDirectory).toAbsolutePath().normalize();
+        this.imageStorageService = imageStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -167,9 +161,7 @@ public class ProjectService {
     }
 
     /**
-     * Stores one allowed image in the existing local uploads directory and saves only
-     * its relative path. Local storage is deliberately sufficient for this single
-     * server project; a cloud object store would be a later deployment concern.
+     * Stores an allowed image through the configured local or cloud storage provider.
      */
     @Transactional
     public ProjectResponse uploadImage(Long projectId, MultipartFile file, User currentUser) {
@@ -180,19 +172,8 @@ public class ProjectService {
             throw new BadRequestException("Please select a non-empty project image.");
         }
 
-        String extension = extensionFor(file);
-        String storedFileName = UUID.randomUUID() + extension;
-        Path projectsDirectory = uploadDirectory.resolve("projects").normalize();
-        Path destination = projectsDirectory.resolve(storedFileName).normalize();
-
-        try {
-            Files.createDirectories(projectsDirectory);
-            file.transferTo(destination);
-        } catch (IOException | IllegalStateException exception) {
-            throw new FileUploadException("Unable to store the project image.", exception);
-        }
-
-        project.getProjectImages().add("projects/" + storedFileName);
+        validateImageType(file);
+        project.getProjectImages().add(imageStorageService.store(file, "projects"));
         return toResponse(projectRepository.save(project));
     }
 
@@ -264,18 +245,18 @@ public class ProjectService {
         return StringUtils.hasText(value) ? value.trim() : null;
     }
 
-    private String extensionFor(MultipartFile file) {
+    private void validateImageType(MultipartFile file) {
         String contentType = file.getContentType();
         if (contentType == null) {
             throw new BadRequestException("Project image type must be JPG, PNG, or WEBP.");
         }
 
-        return switch (contentType.toLowerCase(Locale.ROOT)) {
-            case "image/jpeg", "image/jpg" -> ".jpg";
-            case "image/png" -> ".png";
-            case "image/webp" -> ".webp";
+        switch (contentType.toLowerCase(Locale.ROOT)) {
+            case "image/jpeg", "image/jpg", "image/png", "image/webp" -> {
+                return;
+            }
             default -> throw new BadRequestException("Project image type must be JPG, PNG, or WEBP.");
-        };
+        }
     }
 
     private ProjectResponse toResponse(Project project) {

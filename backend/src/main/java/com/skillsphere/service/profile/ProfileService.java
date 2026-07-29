@@ -26,21 +26,16 @@ import com.skillsphere.repository.SkillRepository;
 import com.skillsphere.repository.UserRepository;
 import com.skillsphere.service.notification.NotificationService;
 import com.skillsphere.service.report.ReportService;
-import org.springframework.beans.factory.annotation.Value;
+import com.skillsphere.service.storage.ImageStorageService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-import java.util.UUID;
 
 /**
  * Handles the profile portion of User without a separate Profile entity. One student
@@ -64,7 +59,7 @@ public class ProfileService {
     private final AnnouncementRepository announcementRepository;
     private final NotificationService notificationService;
     private final ReportService reportService;
-    private final Path uploadDirectory;
+    private final ImageStorageService imageStorageService;
 
     public ProfileService(
             UserRepository userRepository,
@@ -79,7 +74,7 @@ public class ProfileService {
             AnnouncementRepository announcementRepository,
             NotificationService notificationService,
             ReportService reportService,
-            @Value("${app.file.upload-dir}") String uploadDirectory
+            ImageStorageService imageStorageService
     ) {
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
@@ -93,7 +88,7 @@ public class ProfileService {
         this.announcementRepository = announcementRepository;
         this.notificationService = notificationService;
         this.reportService = reportService;
-        this.uploadDirectory = Path.of(uploadDirectory).toAbsolutePath().normalize();
+        this.imageStorageService = imageStorageService;
     }
 
     @Transactional(readOnly = true)
@@ -118,7 +113,7 @@ public class ProfileService {
 
     @Transactional(readOnly = true)
     public ProfileResponse getByUsername(String username, User viewer) {
-        User profile = userRepository.findByUsername(username)
+        User profile = userRepository.findByUsernameIgnoreCase(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Profile not found: " + username));
         boolean canView = profile.isPublicProfileVisibility()
                 || (viewer != null && (viewer.getId().equals(profile.getId()) || viewer.getRole() == Role.ROLE_ADMIN));
@@ -164,17 +159,7 @@ public class ProfileService {
         }
 
         User user = findUser(currentUser.getId());
-        String extension = getExtension(file.getOriginalFilename());
-        String storedName = UUID.randomUUID() + extension;
-        Path profileDirectory = uploadDirectory.resolve("profiles");
-        try {
-            Files.createDirectories(profileDirectory);
-            Files.copy(file.getInputStream(), profileDirectory.resolve(storedName), StandardCopyOption.REPLACE_EXISTING);
-        } catch (IOException exception) {
-            throw new FileUploadException("Unable to store the profile image.");
-        }
-
-        user.setProfilePicturePath("profiles/" + storedName);
+        user.setProfilePicturePath(imageStorageService.store(file, "profiles"));
         return toResponse(userRepository.save(user), true);
     }
 
@@ -284,11 +269,4 @@ public class ProfileService {
         return value == null || value.isBlank() ? null : value.trim();
     }
 
-    private String getExtension(String originalFilename) {
-        if (originalFilename == null || !originalFilename.contains(".")) {
-            return ".jpg";
-        }
-        String extension = originalFilename.substring(originalFilename.lastIndexOf('.')).toLowerCase(Locale.ROOT);
-        return extension.matches("\\.(jpg|jpeg|png|webp)") ? extension : ".jpg";
-    }
 }
