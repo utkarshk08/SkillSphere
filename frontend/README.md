@@ -47,14 +47,15 @@ Import the GitHub repository into Vercel and set the project root directory to `
 The included `vercel.json` sends client-side routes such as `/projects/12` back to `index.html`.
 
 Create two Vercel projects from the same commit because Vite embeds `VITE_*` variables at build
-time:
+time. Password login needs only `VITE_API_BASE_URL`; leave `VITE_GOOGLE_OAUTH_ENABLED` unset or
+`false` until Google credentials have been configured in the matching backend:
 
-| Frontend project | `VITE_API_BASE_URL` | `VITE_OAUTH_LOGIN_URL` |
-| --- | --- | --- |
-| TiDB version | `https://<tidb-render-service>/api` | `https://<tidb-render-service>/oauth2/authorization/google` |
-| Neon version | `https://<neon-render-service>/api` | `https://<neon-render-service>/oauth2/authorization/google` |
+| Frontend project | `VITE_API_BASE_URL` |
+| --- | --- |
+| TiDB version | `https://<tidb-render-service>/api` |
+| Neon version | `https://<neon-render-service>/api` |
 
-Set both variables for Production. A change to either value requires a new Vercel deployment.
+Set the matching API variable for Production. A change to it requires a new Vercel deployment.
 Preview deployments use different origins and are intentionally not allowed by the backend's
 single exact production CORS origin.
 
@@ -75,7 +76,9 @@ Google credentials belong only in the Spring Boot backend. Do not put the client
 1. Create OAuth 2.0 credentials in the [Google Cloud Console](https://console.cloud.google.com/).
 2. Add `http://localhost:8080/login/oauth2/code/google` as the authorized redirect URI.
 3. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for the backend.
-4. The backend redirects successful sign-in to `http://localhost:5173/oauth2/callback?token=<JWT>`.
+4. Set `VITE_GOOGLE_OAUTH_ENABLED=true` and `VITE_OAUTH_LOGIN_URL` to the backend's
+   `/oauth2/authorization/google` endpoint, then rebuild the frontend.
+5. The backend redirects successful sign-in to `http://localhost:5173/oauth2/callback?token=<JWT>`.
 
 The frontend callback stores the token, and the backend remains responsible for validating the JWT on every protected request.
 

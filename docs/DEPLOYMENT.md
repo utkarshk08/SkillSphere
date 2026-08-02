@@ -118,20 +118,19 @@ Import the same GitHub repository twice. For each project:
 1. Set Root Directory to `frontend`.
 2. Keep the Vite framework preset.
 3. Use Node.js 22.
-4. Add the two required production variables.
+4. Add the required API variable. Google OAuth variables are optional until Google credentials
+   have been configured.
 
 TiDB frontend:
 
 ```text
 VITE_API_BASE_URL=https://skillsphere-api-tidb-utkarshk08.onrender.com/api
-VITE_OAUTH_LOGIN_URL=https://skillsphere-api-tidb-utkarshk08.onrender.com/oauth2/authorization/google
 ```
 
 Neon frontend:
 
 ```text
 VITE_API_BASE_URL=https://skillsphere-api-neon-utkarshk08.onrender.com/api
-VITE_OAUTH_LOGIN_URL=https://skillsphere-api-neon-utkarshk08.onrender.com/oauth2/authorization/google
 ```
 
 If a provider changes either generated hostname, update the matching variables and redeploy.
@@ -148,6 +147,16 @@ https://skillsphere-api-neon-utkarshk08.onrender.com/login/oauth2/code/google
 
 Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in both Render services. Each backend already
 redirects success to its matching Vercel `/oauth2/callback` URL.
+
+For each matching Vercel project, also set:
+
+```text
+VITE_GOOGLE_OAUTH_ENABLED=true
+VITE_OAUTH_LOGIN_URL=https://<matching-render-service>.onrender.com/oauth2/authorization/google
+```
+
+Until those values and the backend credentials are present, the frontend keeps the Google button
+hidden so it does not advertise an unavailable login method.
 
 ## 8. Acceptance checklist
 

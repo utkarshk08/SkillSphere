@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import AuthLayout from '../components/layout/AuthLayout';
 import useAuth from '../hooks/useAuth';
-import { OAUTH_LOGIN_URL } from '../config/environment';
+import { GOOGLE_OAUTH_ENABLED, OAUTH_LOGIN_URL } from '../config/environment';
 
 const initialCredentials = { email: '', password: '' };
 const OAUTH_DESTINATION_KEY = 'skillsphere_oauth_destination';
@@ -90,11 +90,15 @@ export default function LoginPage() {
           </button>
         </form>
 
-        <div className="auth-divider"><span>or</span></div>
-        <button className="button button-google button-full" onClick={beginGoogleLogin} type="button">
-          <span className="google-letter" aria-hidden="true">G</span>
-          Continue with Google
-        </button>
+        {GOOGLE_OAUTH_ENABLED && (
+          <>
+            <div className="auth-divider"><span>or</span></div>
+            <button className="button button-google button-full" onClick={beginGoogleLogin} type="button">
+              <span className="google-letter" aria-hidden="true">G</span>
+              Continue with Google
+            </button>
+          </>
+        )}
 
         <p className="auth-switch">
           New to SkillSphere? <Link to="/register">Create an account</Link>
