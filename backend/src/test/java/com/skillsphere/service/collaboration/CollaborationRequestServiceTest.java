@@ -19,6 +19,8 @@ import com.skillsphere.service.notification.NotificationService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 
 import java.util.Optional;
 
@@ -55,6 +57,18 @@ class CollaborationRequestServiceTest {
         );
         when(requestRepository.save(any(CollaborationRequest.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @Test
+    void blankSearchUsesAnEmptyStringForPostgresSafeBinding() {
+        User currentUser = user(1L, "current");
+        PageRequest pageable = PageRequest.of(0, 10);
+        when(requestRepository.findForUser(currentUser.getId(), "", pageable))
+                .thenReturn(Page.empty(pageable));
+
+        service.getMine(currentUser, "   ", pageable);
+
+        verify(requestRepository).findForUser(currentUser.getId(), "", pageable);
     }
 
     @Test

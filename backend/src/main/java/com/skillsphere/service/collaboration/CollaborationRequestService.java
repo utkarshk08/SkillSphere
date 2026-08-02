@@ -51,7 +51,7 @@ public class CollaborationRequestService {
 
     @Transactional(readOnly = true)
     public Page<CollaborationRequestResponse> getMine(User currentUser, String search, Pageable pageable) {
-        String normalizedSearch = search == null || search.isBlank() ? null : search.trim();
+        String normalizedSearch = search == null || search.isBlank() ? "" : search.trim();
         return requestRepository.findForUser(currentUser.getId(), normalizedSearch, pageable).map(this::toResponse);
     }
 

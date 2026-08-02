@@ -30,7 +30,7 @@ public interface CollaborationRequestRepository extends JpaRepository<Collaborat
             select request from CollaborationRequest request
             left join request.project project
             where (request.sender.id = :userId or request.receiver.id = :userId)
-              and (:search is null or lower(request.message) like lower(concat('%', :search, '%'))
+              and (:search = '' or lower(request.message) like lower(concat('%', :search, '%'))
                 or lower(request.responseMessage) like lower(concat('%', :search, '%'))
                 or lower(request.sender.username) like lower(concat('%', :search, '%'))
                 or lower(request.receiver.username) like lower(concat('%', :search, '%'))
