@@ -70,7 +70,7 @@ class ProfileServiceTest {
         User student = student(1L, "public_student");
         Pageable pageable = PageRequest.of(0, 10);
         when(userRepository.searchPublicProfiles(
-                null, null, null, null, null, Role.ROLE_USER, pageable
+                "", "", "", "", "", Role.ROLE_USER, pageable
         )).thenReturn(new PageImpl<>(List.of(student)));
         stubProfileDetails(student);
 
@@ -83,7 +83,7 @@ class ProfileServiceTest {
         assertNull(response.role());
         assertNull(response.authProvider());
         verify(userRepository).searchPublicProfiles(
-                null, null, null, null, null, Role.ROLE_USER, pageable
+                "", "", "", "", "", Role.ROLE_USER, pageable
         );
     }
 

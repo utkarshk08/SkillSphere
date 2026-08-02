@@ -47,12 +47,12 @@ public interface UserRepository extends JpaRepository<User, Long> {
             left join user.interests interest
             where user.publicProfileVisibility = true
               and user.role = :role
-              and (:name is null or lower(user.username) like lower(concat('%', :name, '%'))
+              and (:name = '' or lower(user.username) like lower(concat('%', :name, '%'))
                    or lower(concat(coalesce(user.firstName, ''), ' ', coalesce(user.lastName, ''))) like lower(concat('%', :name, '%')))
-              and (:college is null or lower(user.collegeName) like lower(concat('%', :college, '%')))
-              and (:country is null or lower(user.country) like lower(concat('%', :country, '%')))
-              and (:skillName is null or lower(skill.name) like lower(concat('%', :skillName, '%')))
-              and (:interestName is null or lower(interest) like lower(concat('%', :interestName, '%')))
+              and (:college = '' or lower(user.collegeName) like lower(concat('%', :college, '%')))
+              and (:country = '' or lower(user.country) like lower(concat('%', :country, '%')))
+              and (:skillName = '' or lower(skill.name) like lower(concat('%', :skillName, '%')))
+              and (:interestName = '' or lower(interest) like lower(concat('%', :interestName, '%')))
             """)
     Page<User> searchPublicProfiles(
             @Param("name") String name,

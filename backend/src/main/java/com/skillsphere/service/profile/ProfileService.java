@@ -262,7 +262,10 @@ public class ProfileService {
     }
 
     private String normalize(String value) {
-        return value == null || value.isBlank() ? null : value.trim();
+        // PostgreSQL cannot infer a text type for null values passed through lower/concat in the
+        // optional JPQL filters and binds them as bytea. An empty string keeps the parameter typed
+        // as text while still representing "no filter" in UserRepository.searchPublicProfiles.
+        return value == null || value.isBlank() ? "" : value.trim();
     }
 
     private String trimToNull(String value) {
