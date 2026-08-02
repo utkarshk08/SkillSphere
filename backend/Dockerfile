@@ -16,4 +16,4 @@ RUN chown -R appuser:appuser /app
 USER appuser
 EXPOSE 10000
 
-ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75.0", "-jar", "/app/app.jar"]
+ENTRYPOINT ["java", "-Xms64m", "-Xmx256m", "-Xss512k", "-XX:MaxMetaspaceSize=128m", "-XX:ReservedCodeCacheSize=64m", "-XX:+UseSerialGC", "-jar", "/app/app.jar"]
